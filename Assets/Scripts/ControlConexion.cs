@@ -16,6 +16,8 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     [SerializeField] private TextMeshProUGUI txtBienvenida;
     [SerializeField] private TextMeshProUGUI txtNuevaSala;
     [SerializeField] private TextMeshProUGUI txtUnirseSala;
+    [SerializeField] private TextMeshProUGUI txtMinJugadores;
+    [SerializeField] private TextMeshProUGUI txtMaxJugadores;
 
 
     [Header("Paneles")]
@@ -95,11 +97,30 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     public void Pulsar_CrearSala()
     {
-        RoomOptions opcionesSala = new RoomOptions();
-        opcionesSala.MaxPlayers = 2;
-        opcionesSala.IsVisible = true;
+        byte minJugadores;
+        byte maxJugadores;
 
-        PhotonNetwork.CreateRoom(txtNuevaSala.text, opcionesSala, TypedLobby.Default);
+        minJugadores = byte.Parse(txtMinJugadores.text);
+        maxJugadores = byte.Parse(txtMaxJugadores.text);
+        if (!string.IsNullOrEmpty(txtNuevaSala.text) || !string.IsNullOrWhiteSpace(txtNuevaSala.text))
+        {
+            if (!(minJugadores > maxJugadores || maxJugadores > 20 || minJugadores > 20 || maxJugadores < 2 || minJugadores < 2))
+            {
+                RoomOptions opcionesSala = new RoomOptions();
+                opcionesSala.MaxPlayers = maxJugadores;
+                opcionesSala.IsVisible = true;
+
+                PhotonNetwork.CreateRoom(txtNuevaSala.text, opcionesSala, TypedLobby.Default);
+            }
+            else
+            {
+                EscribirBarraEstado("Introduzca los valores correctos para la capacidad de la sala");
+            }
+        }
+        else
+        {
+            EscribirBarraEstado("Introduzca un nombre correcto para la sala");
+        }
 
     }
 
@@ -110,8 +131,11 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     public void PulsarUnirseASala()
     {
+        
+
         if (!string.IsNullOrEmpty(txtUnirseSala.text) || !string.IsNullOrWhiteSpace(txtUnirseSala.text))
         {
+            
             PhotonNetwork.JoinRoom(txtUnirseSala.text);
         }
         else
