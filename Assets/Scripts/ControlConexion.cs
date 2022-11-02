@@ -16,8 +16,12 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     [SerializeField] private TextMeshProUGUI txtBienvenida;
     [SerializeField] private TextMeshProUGUI txtNuevaSala;
     [SerializeField] private TextMeshProUGUI txtUnirseSala;
-    [SerializeField] private TextMeshProUGUI txtMinJugadores;
-    [SerializeField] private TextMeshProUGUI txtMaxJugadores;
+    [SerializeField] private Text txtMinJugadores;
+    [SerializeField] private Text txtMaxJugadores;
+
+    [SerializeField] private Text txtNombreSala;
+    [SerializeField] private Text txtCapacidad;
+    [SerializeField] private Text txtListaJugadores;
 
 
     [Header("Paneles")]
@@ -26,11 +30,24 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     [SerializeField] private GameObject panelCrearSala;
     [SerializeField] private GameObject panelUnirseSala;
     [SerializeField] private GameObject panelSala;
+    [SerializeField] private GameObject panelSeleccionAvatar;
     #endregion
+    [Header("otros")]
+    public int avatarSeleccionado;
+    public ControlConexion conex;
+    [SerializeField] private Button btnComenzarJuego;
+
+    [Header("ListaJugadores")]
+    public GameObject elementoJugador;
+    public GameObject contenedor;
+
+
+
     // Start is called before the first frame update
     void Start()
     {
         ActivarPanel(panelConexion);
+        conex = this;
     }
 
     // Update is called once per frame
@@ -39,6 +56,51 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         
     }
 
+    public void ActualizarPanelSala()
+    {
+        //OLD
+        string cadena = "";
+        txtNombreSala.text = "SALA: " + PhotonNetwork.CurrentRoom.Name;
+        txtCapacidad.text = "Capacidad " + PhotonNetwork.CurrentRoom.PlayerCount + "/" + PhotonNetwork.CurrentRoom.MaxPlayers;
+        
+        foreach( Player jugador in PhotonNetwork.PlayerList)
+        {
+            cadena = cadena + jugador.NickName + "\n";
+        }
+
+        txtListaJugadores.text = cadena;
+        //FIN OLD
+
+        //NEW
+        //eliminamos los hijos mientras halla
+        while (contenedor.transform.childCount > 0)
+        {
+            DestroyImmediate(contenedor.transform.GetChild(0).gameObject);
+        }
+
+        foreach (Player jugador in PhotonNetwork.PlayerList)
+        {
+            GameObject nuevoElemento = Instantiate(elementoJugador);
+            nuevoElemento.transform.SetParent(contenedor.transform);
+
+            //localizamos textos y actualizamos
+            nuevoElemento.transform.Find("txtNombreJugador").GetComponent<TextMeshProUGUI>().text = jugador.NickName;
+            nuevoElemento.transform.Find("txtNum").GetComponent<TextMeshProUGUI>().text = jugador.ActorNumber.ToString();
+
+        }
+        
+        if(PhotonNetwork.CurrentRoom.PlayerCount >= int.Parse(txtMinJugadores.text))
+        {
+            btnComenzarJuego.interactable = true;
+        }
+        else
+        {
+            btnComenzarJuego.interactable = false;
+        }
+
+    }
+
+   
     public void Pulsar_BtnConectar()
     {
         
@@ -68,6 +130,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         panelCrearSala.SetActive(false);
         panelUnirseSala.SetActive(false);
         panelSala.SetActive(false);
+        panelSeleccionAvatar.SetActive(false);
 
         panel.SetActive(true);
     }
@@ -76,6 +139,12 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     {
         ActivarPanel(panelCrearSala);
         EscribirBarraEstado(" Crear una sala nueva");
+    }
+
+    public void Pulsar_BtnSeleccionAvatar()
+    {
+        ActivarPanel(panelSeleccionAvatar);
+        EscribirBarraEstado(" SeleccionarAvatar");
     }
 
     public void Pulsar_BtnUnirseSala()
@@ -129,6 +198,25 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         ActivarPanel(panelBienvenida);
     }
 
+
+
+    public void Pulsar_BtnVolverAvatar()
+    {
+        ActivarPanel(panelBienvenida);
+
+        if(avatarSeleccionado >= 0)
+        {
+            EscribirBarraEstado("Avatar Seleccionado " + avatarSeleccionado);
+            panelBienvenida.transform.Find("btnCrearSala").GetComponent<Button>().interactable = true;
+            panelBienvenida.transform.Find("btnUnirseSala").GetComponent<Button>().interactable = true;
+        }
+        else
+        {
+            EscribirBarraEstado("No ha seleccionado avatar");
+        }
+
+    }
+
     public void PulsarUnirseASala()
     {
         
@@ -178,6 +266,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         //base.OnCreatedRoom();
         string mensaje = PhotonNetwork.NickName + " se ha conectado a " + PhotonNetwork.CurrentRoom.Name;
         EscribirBarraEstado(mensaje);
+        ActualizarPanelSala();
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -190,6 +279,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     {
         EscribirBarraEstado(PhotonNetwork.NickName + " se ha unido a " + PhotonNetwork.CurrentRoom.Name);
         ActivarPanel(panelSala);
+        ActualizarPanelSala();
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
@@ -198,7 +288,18 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     }
 
 
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        ActualizarPanelSala();
+    }
+
+    public override void OnPlayerLeftRoom(Player player)
+    {
+        ActualizarPanelSala();
+    }
+
     #endregion
 
 
 }
+//THE BOSS  CHAD  ROTH
