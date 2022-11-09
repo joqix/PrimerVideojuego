@@ -272,6 +272,8 @@ public class ControlConexion : MonoBehaviourPunCallbacks
             EscribirBarraEstado("Avatar Seleccionado " + avatarSeleccionado);
             panelBienvenida.transform.Find("btnCrearSala").GetComponent<Button>().interactable = true;
             panelBienvenida.transform.Find("btnUnirseSala").GetComponent<Button>().interactable = true;
+
+            
         }
         else
         {
