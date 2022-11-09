@@ -41,11 +41,20 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     public GameObject elementoJugador;
     public GameObject contenedor;
 
+    [Header("ListaSala")]
+    public GameObject elementoSala;
+    public GameObject contenedorSala;
 
+    Dictionary<string, RoomInfo> listaSalas;
+
+    //[Header("Otros")]
+    
+    
 
     // Start is called before the first frame update
     void Start()
     {
+        listaSalas = new Dictionary<string, RoomInfo>();
         ActivarPanel(panelConexion);
         conex = this;
     }
@@ -100,7 +109,61 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     }
 
-   
+
+    public void ActualizarPanelUnirseSala()
+    {
+
+        while (contenedorSala.transform.childCount > 0)
+        {
+            DestroyImmediate(contenedorSala.transform.GetChild(0).gameObject);
+        }
+
+        foreach (RoomInfo sala in listaSalas.Values)
+        {
+            GameObject nuevoElemento = Instantiate(elementoSala);
+            nuevoElemento.transform.SetParent(contenedorSala.transform);
+
+            //localizamos textos y actualizamos
+            nuevoElemento.transform.Find("txtNombreSala").GetComponent<TextMeshProUGUI>().text = sala.Name;
+            nuevoElemento.transform.Find("txtNum").GetComponent<TextMeshProUGUI>().text = sala.PlayerCount+"/"+sala.MaxPlayers;
+        }
+    }
+
+    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+        foreach (RoomInfo sala in roomList)
+        {
+            if (sala.RemovedFromList || !sala.IsOpen || !sala.IsVisible)
+            {
+                listaSalas.Remove(sala.Name);
+            }
+
+            if (listaSalas.ContainsKey(sala.Name))
+            {
+                if(sala.PlayerCount > 0)
+                {
+                    listaSalas[sala.Name] = sala;
+                }
+                else
+                {
+                    listaSalas.Remove(sala.Name);
+                }
+            }
+            else
+            {
+                listaSalas.Add(sala.Name,sala);
+                    
+            }
+
+        }
+
+        ActualizarPanelUnirseSala();
+
+        
+    }
+
+
+
     public void Pulsar_BtnConectar()
     {
         
@@ -236,18 +299,20 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     public override void OnConnectedToMaster()
     {
-        //base.OnConnectedToMaster();
+        base.OnConnectedToMaster();
         EscribirBarraEstado("OnConnectedToMaster - Conectado a Photon");
         Debug.Log ("OnConnectedToMaster - Conectado a Photon");
         EscribirBarraEstado(PhotonNetwork.NickName + ", bienvenido al juego");
         ActivarPanel(panelBienvenida);
 
         txtBienvenida.text = PhotonNetwork.NickName;
+       
+        ActualizarPanelUnirseSala();
     }
 
     public override void OnConnected()
     {
-        //base.OnConnected();
+        base.OnConnected();
 
         EscribirBarraEstado("OnConnected - Conectado a Photon");
     }
