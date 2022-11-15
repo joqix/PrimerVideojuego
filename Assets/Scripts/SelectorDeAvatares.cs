@@ -12,8 +12,8 @@ public class SelectorDeAvatares : MonoBehaviour
     
     private int nHijos;
     private int indiceAvatares;
-
     private GameObject[] avatares;
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -39,7 +39,7 @@ public class SelectorDeAvatares : MonoBehaviour
     {
         indiceAvatares++;
 
-        if(indiceAvatares > nHijos - 1)
+        if(indiceAvatares >= nHijos)
         {
             indiceAvatares = 0;
         }

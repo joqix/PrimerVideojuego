@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 public class ControlConexion : MonoBehaviourPunCallbacks
 {
-    #region variables
+    #region variables privadass
     [Header("inputField")]
     [SerializeField] private Text txtNombreJugador;
     [Header("Texts")]
@@ -45,6 +45,9 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     public GameObject elementoSala;
     public GameObject contenedorSala;
 
+
+
+
     Dictionary<string, RoomInfo> listaSalas;
 
     //[Header("Otros")]
@@ -54,9 +57,10 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
-        listaSalas = new Dictionary<string, RoomInfo>();
-        ActivarPanel(panelConexion);
+        avatarSeleccionado = -1;
         conex = this;
+        ActivarPanel(panelConexion);
+        
     }
 
     // Update is called once per frame
@@ -65,6 +69,123 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         
     }
 
+    #region botones
+    public void Pulsar_BtnConectar()
+    {
+
+        if (!string.IsNullOrEmpty(txtNombreJugador.text) || !string.IsNullOrWhiteSpace(txtNombreJugador.text))
+        {
+            PhotonNetwork.ConnectUsingSettings();
+            PhotonNetwork.NickName = txtNombreJugador.text;
+
+            EscribirBarraEstado(txtNombreJugador.text);
+        }
+        else
+        {
+            txtBarraDeEstado.text = "Indica un nombre de usuario para conectar";
+        }
+
+    }
+
+    public void Pulsar_BtnCrearSala()
+    {
+        ActivarPanel(panelCrearSala);
+        EscribirBarraEstado(" Crear una sala nueva");
+    }
+
+    public void Pulsar_BtnUnirseSala()
+    {
+        ActivarPanel(panelUnirseSala);
+        EscribirBarraEstado(" Unirse a una sala");
+    }
+
+    public void Pulsar_BtnDesconectar()
+    {
+        PhotonNetwork.Disconnect();
+        ActivarPanel(panelConexion);
+    }
+
+    public void Pulsar_CrearSala()
+    {
+        byte minJugadores;
+        byte maxJugadores;
+
+        minJugadores = byte.Parse(txtMinJugadores.text);
+        maxJugadores = byte.Parse(txtMaxJugadores.text);
+        if (!string.IsNullOrEmpty(txtNuevaSala.text) || !string.IsNullOrWhiteSpace(txtNuevaSala.text))
+        {
+            if (!(minJugadores > maxJugadores || maxJugadores > 20 || minJugadores > 20 || maxJugadores < 2 || minJugadores < 2))
+            {
+                RoomOptions opcionesSala = new RoomOptions();
+                opcionesSala.MaxPlayers = maxJugadores;
+                opcionesSala.IsVisible = true;
+
+                PhotonNetwork.CreateRoom(txtNuevaSala.text, opcionesSala, TypedLobby.Default);
+            }
+            else
+            {
+                EscribirBarraEstado("Introduzca los valores correctos para la capacidad de la sala");
+            }
+        }
+        else
+        {
+            EscribirBarraEstado("Introduzca un nombre correcto para la sala");
+        }
+
+    }
+
+    public void PulsarUnirseASala()
+    {
+
+
+        if (!string.IsNullOrEmpty(txtUnirseSala.text) || !string.IsNullOrWhiteSpace(txtUnirseSala.text))
+        {
+
+            PhotonNetwork.JoinRoom(txtUnirseSala.text);
+        }
+        else
+        {
+            EscribirBarraEstado("Introduzca un nombre correcto para la sala");
+        }
+    }
+
+    public void Pulsar_BtnSeleccionAvatar()
+    {
+        ActivarPanel(panelSeleccionAvatar);
+        EscribirBarraEstado(" SeleccionarAvatar");
+    }
+
+    public void Pulsar_BtnSalir()
+    {
+        Application.Quit();
+    }
+
+    public void Pulsar_BtnVolver()
+    {
+        ActivarPanel(panelBienvenida);
+
+    }
+
+    public void Pulsar_BtnVolverAvatar()
+    {
+        ActivarPanel(panelBienvenida);
+
+        if (avatarSeleccionado >= 0)
+        {
+            EscribirBarraEstado("Avatar Seleccionado " + avatarSeleccionado);
+            panelBienvenida.transform.Find("btnCrearSala").GetComponent<Button>().interactable = true;
+            panelBienvenida.transform.Find("btnUnirseSala").GetComponent<Button>().interactable = true;
+
+
+        }
+        else
+        {
+            EscribirBarraEstado("No ha seleccionado avatar");
+        }
+
+    }
+
+    #endregion
     public void ActualizarPanelSala()
     {
         //OLD
@@ -97,7 +218,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
             nuevoElemento.transform.Find("txtNum").GetComponent<TextMeshProUGUI>().text = jugador.ActorNumber.ToString();
 
         }
-        
+        //comprobar si hay el minimo de jugadores
         if(PhotonNetwork.CurrentRoom.PlayerCount >= int.Parse(txtMinJugadores.text))
         {
             btnComenzarJuego.interactable = true;
@@ -164,22 +285,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
 
 
-    public void Pulsar_BtnConectar()
-    {
-        
-        if (!string.IsNullOrEmpty(txtNombreJugador.text) || !string.IsNullOrWhiteSpace(txtNombreJugador.text))
-        {
-            PhotonNetwork.ConnectUsingSettings();
-            PhotonNetwork.NickName = txtNombreJugador.text;
-
-            EscribirBarraEstado(txtNombreJugador.text);
-        }
-        else
-        {
-            txtBarraDeEstado.text = "Indica un nombre de usuario para conectar";
-        }
-
-    }
+    
 
     private void EscribirBarraEstado(string texto)
     {
@@ -198,104 +304,19 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         panel.SetActive(true);
     }
 
-    public void Pulsar_BtnCrearSala()
-    {
-        ActivarPanel(panelCrearSala);
-        EscribirBarraEstado(" Crear una sala nueva");
-    }
-
-    public void Pulsar_BtnSeleccionAvatar()
-    {
-        ActivarPanel(panelSeleccionAvatar);
-        EscribirBarraEstado(" SeleccionarAvatar");
-    }
-
-    public void Pulsar_BtnUnirseSala()
-    {
-        ActivarPanel(panelUnirseSala);
-        EscribirBarraEstado(" Unirse a una sala");
-    }
-
-    public void Pulsar_BtnSalir()
-    {
-        Application.Quit();
-    }
-
-    public void Pulsar_BtnDesconectar()
-    {
-        PhotonNetwork.Disconnect();
-        ActivarPanel(panelConexion);
-    }
-
-    public void Pulsar_CrearSala()
-    {
-        byte minJugadores;
-        byte maxJugadores;
-
-        minJugadores = byte.Parse(txtMinJugadores.text);
-        maxJugadores = byte.Parse(txtMaxJugadores.text);
-        if (!string.IsNullOrEmpty(txtNuevaSala.text) || !string.IsNullOrWhiteSpace(txtNuevaSala.text))
-        {
-            if (!(minJugadores > maxJugadores || maxJugadores > 20 || minJugadores > 20 || maxJugadores < 2 || minJugadores < 2))
-            {
-                RoomOptions opcionesSala = new RoomOptions();
-                opcionesSala.MaxPlayers = maxJugadores;
-                opcionesSala.IsVisible = true;
-
-                PhotonNetwork.CreateRoom(txtNuevaSala.text, opcionesSala, TypedLobby.Default);
-            }
-            else
-            {
-                EscribirBarraEstado("Introduzca los valores correctos para la capacidad de la sala");
-            }
-        }
-        else
-        {
-            EscribirBarraEstado("Introduzca un nombre correcto para la sala");
-        }
-
-    }
-
-    public void Pulsar_BtnVolver()
-    {
-        ActivarPanel(panelBienvenida);
-    }
+ 
 
 
 
-    public void Pulsar_BtnVolverAvatar()
-    {
-        ActivarPanel(panelBienvenida);
 
-        if(avatarSeleccionado >= 0)
-        {
-            EscribirBarraEstado("Avatar Seleccionado " + avatarSeleccionado);
-            panelBienvenida.transform.Find("btnCrearSala").GetComponent<Button>().interactable = true;
-            panelBienvenida.transform.Find("btnUnirseSala").GetComponent<Button>().interactable = true;
 
-            
-        }
-        else
-        {
-            EscribirBarraEstado("No ha seleccionado avatar");
-        }
 
-    }
 
-    public void PulsarUnirseASala()
-    {
-        
 
-        if (!string.IsNullOrEmpty(txtUnirseSala.text) || !string.IsNullOrWhiteSpace(txtUnirseSala.text))
-        {
-            
-            PhotonNetwork.JoinRoom(txtUnirseSala.text);
-        }
-        else
-        {
-            EscribirBarraEstado("Introduzca un nombre correcto para la sala");
-        }
-    }
+
+ 
+
+
 
     #region Callbacks
 
