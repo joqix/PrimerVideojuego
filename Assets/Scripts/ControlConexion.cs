@@ -15,7 +15,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     [SerializeField] private TextMeshProUGUI txtBarraDeEstado;
     [SerializeField] private TextMeshProUGUI txtBienvenida;
     [SerializeField] private TextMeshProUGUI txtNuevaSala;
-    [SerializeField] private TextMeshProUGUI txtUnirseSala;
+    //[SerializeField] private TextMeshProUGUI txtUnirseSala;
     [SerializeField] private Text txtMinJugadores;
     [SerializeField] private Text txtMaxJugadores;
 
@@ -36,6 +36,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     public int avatarSeleccionado;
     public ControlConexion conex;
     [SerializeField] private Button btnComenzarJuego;
+    ExitGames.Client.Photon.Hashtable PlayerProperties;
 
     [Header("ListaJugadores")]
     public GameObject elementoJugador;
@@ -57,6 +58,8 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
+        PlayerProperties = new ExitGames.Client.Photon.Hashtable();
+        listaSalas = new Dictionary<string, RoomInfo>();
         avatarSeleccionado = -1;
         conex = this;
         ActivarPanel(panelConexion);
@@ -97,6 +100,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     {
         ActivarPanel(panelUnirseSala);
         EscribirBarraEstado(" Unirse a una sala");
+        ActualizarPanelUnirseSala();
     }
 
     public void Pulsar_BtnDesconectar()
@@ -107,11 +111,10 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     public void Pulsar_CrearSala()
     {
-        byte minJugadores;
-        byte maxJugadores;
+        byte minJugadores = byte.Parse(txtMinJugadores.text);
+        byte maxJugadores = byte.Parse(txtMaxJugadores.text);
 
-        minJugadores = byte.Parse(txtMinJugadores.text);
-        maxJugadores = byte.Parse(txtMaxJugadores.text);
+
         if (!string.IsNullOrEmpty(txtNuevaSala.text) || !string.IsNullOrWhiteSpace(txtNuevaSala.text))
         {
             if (!(minJugadores > maxJugadores || maxJugadores > 20 || minJugadores > 20 || maxJugadores < 2 || minJugadores < 2))
@@ -134,7 +137,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     }
 
-    public void PulsarUnirseASala()
+    /*public void PulsarUnirseASala()
     {
 
 
@@ -147,7 +150,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         {
             EscribirBarraEstado("Introduzca un nombre correcto para la sala");
         }
-    }
+    }*/
 
     public void Pulsar_BtnSeleccionAvatar()
     {
@@ -233,21 +236,32 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     public void ActualizarPanelUnirseSala()
     {
-
+        Debug.Log("AcualizoPanelUnirse");
         while (contenedorSala.transform.childCount > 0)
         {
             DestroyImmediate(contenedorSala.transform.GetChild(0).gameObject);
+            Debug.Log("Eliino sala ");
         }
 
         foreach (RoomInfo sala in listaSalas.Values)
         {
+            //if (sala.IsVisible)
+            //{
+            Debug.Log("creo sala ");
             GameObject nuevoElemento = Instantiate(elementoSala);
-            nuevoElemento.transform.SetParent(contenedorSala.transform);
+                nuevoElemento.GetComponent<Transform>().SetParent(contenedorSala.GetComponent<Transform>());
 
-            //localizamos textos y actualizamos
-            nuevoElemento.transform.Find("txtNombreSala").GetComponent<TextMeshProUGUI>().text = sala.Name;
-            nuevoElemento.transform.Find("txtNum").GetComponent<TextMeshProUGUI>().text = sala.PlayerCount+"/"+sala.MaxPlayers;
+                //localizamos textos y actualizamos
+                nuevoElemento.transform.Find("txtNombreSala").GetComponent<TextMeshProUGUI>().text = sala.Name;
+                nuevoElemento.transform.Find("txtNum").GetComponent<TextMeshProUGUI>().text = sala.PlayerCount + "/" + sala.MaxPlayers;
+                nuevoElemento.GetComponent<Button>().onClick.AddListener(() => { UnirseASalaDesdeLista(sala.Name); });
+            //}
         }
+    }
+
+    public void UnirseASalaDesdeLista(string roomName)
+    {
+        PhotonNetwork.JoinRoom(roomName);
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
@@ -304,19 +318,6 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         panel.SetActive(true);
     }
 
- 
-
-
-
-
-
-
-
-
-
- 
-
-
 
     #region Callbacks
 
@@ -352,8 +353,8 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     public override void OnCreatedRoom()
     {
         //base.OnCreatedRoom();
-        string mensaje = PhotonNetwork.NickName + " se ha conectado a " + PhotonNetwork.CurrentRoom.Name;
-        EscribirBarraEstado(mensaje);
+        
+        EscribirBarraEstado(PhotonNetwork.NickName + " se ha conectado a " + PhotonNetwork.CurrentRoom.Name);
         ActualizarPanelSala();
     }
 
