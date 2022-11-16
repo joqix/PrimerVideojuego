@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
-using TMPro;
-using Photon.Realtime;
 using UnityEngine.UI;
+using Photon.Realtime;
+
+using TMPro;
+using UnityEngine.SceneManagement;
 
 public class ControlConexion : MonoBehaviourPunCallbacks
 {
@@ -22,6 +24,8 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     [SerializeField] private Text txtNombreSala;
     [SerializeField] private Text txtCapacidad;
     [SerializeField] private Text txtListaJugadores;
+
+    [SerializeField] private Toggle check_SalaPrivada;
 
 
     [Header("Paneles")]
@@ -58,8 +62,9 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
-        PlayerProperties = new ExitGames.Client.Photon.Hashtable();
         listaSalas = new Dictionary<string, RoomInfo>();
+        PlayerProperties = new ExitGames.Client.Photon.Hashtable();
+
         avatarSeleccionado = -1;
         conex = this;
         ActivarPanel(panelConexion);
@@ -79,6 +84,7 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         if (!string.IsNullOrEmpty(txtNombreJugador.text) || !string.IsNullOrWhiteSpace(txtNombreJugador.text))
         {
             PhotonNetwork.ConnectUsingSettings();
+            PhotonNetwork.AutomaticallySyncScene = true;
             PhotonNetwork.NickName = txtNombreJugador.text;
 
             EscribirBarraEstado(txtNombreJugador.text);
@@ -100,7 +106,6 @@ public class ControlConexion : MonoBehaviourPunCallbacks
     {
         ActivarPanel(panelUnirseSala);
         EscribirBarraEstado(" Unirse a una sala");
-        ActualizarPanelUnirseSala();
     }
 
     public void Pulsar_BtnDesconectar()
@@ -109,19 +114,26 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         ActivarPanel(panelConexion);
     }
 
+    public void Pulsar_BtnDesconectarBienvenida()
+    {
+        PhotonNetwork.Disconnect();
+        ActivarPanel(panelConexion);
+
+    }
+
     public void Pulsar_CrearSala()
     {
         byte minJugadores = byte.Parse(txtMinJugadores.text);
         byte maxJugadores = byte.Parse(txtMaxJugadores.text);
 
 
-        if (!string.IsNullOrEmpty(txtNuevaSala.text) || !string.IsNullOrWhiteSpace(txtNuevaSala.text))
+        if (!string.IsNullOrEmpty(txtNuevaSala.text))
         {
             if (!(minJugadores > maxJugadores || maxJugadores > 20 || minJugadores > 20 || maxJugadores < 2 || minJugadores < 2))
             {
                 RoomOptions opcionesSala = new RoomOptions();
                 opcionesSala.MaxPlayers = maxJugadores;
-                opcionesSala.IsVisible = true;
+                opcionesSala.IsVisible = !(check_SalaPrivada.isOn);
 
                 PhotonNetwork.CreateRoom(txtNuevaSala.text, opcionesSala, TypedLobby.Default);
             }
@@ -188,6 +200,24 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     }
 
+    public void Pulsar_VolverPanelBienvenida()
+    {
+        PhotonNetwork.LeaveRoom();
+        ActivarPanel(panelBienvenida);
+    }
+
+    public void Pulsar_BtnAbandonarSala()
+    {
+        PhotonNetwork.LeaveRoom();
+        ActivarPanel(panelBienvenida);
+    }
+
+    public void Pulsar_BtnComenzarJuego()
+    {
+        //PhotonNetwork.LoadLevel(1);
+        SceneManager.LoadScene(1);
+    }
+
     #endregion
     public void ActualizarPanelSala()
     {
@@ -222,12 +252,14 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
         }
         //comprobar si hay el minimo de jugadores
-        if(PhotonNetwork.CurrentRoom.PlayerCount >= int.Parse(txtMinJugadores.text))
+        if(PhotonNetwork.CurrentRoom.PlayerCount >= int.Parse(txtMinJugadores.text) && PhotonNetwork.IsMasterClient)
         {
+            btnComenzarJuego.gameObject.SetActive(true);
             btnComenzarJuego.interactable = true;
         }
         else
         {
+            btnComenzarJuego.gameObject.SetActive(false);
             btnComenzarJuego.interactable = false;
         }
 
@@ -297,10 +329,6 @@ public class ControlConexion : MonoBehaviourPunCallbacks
         
     }
 
-
-
-    
-
     private void EscribirBarraEstado(string texto)
     {
         txtBarraDeEstado.text = texto;
@@ -323,27 +351,29 @@ public class ControlConexion : MonoBehaviourPunCallbacks
 
     public override void OnConnectedToMaster()
     {
-        base.OnConnectedToMaster();
+        //base.OnConnectedToMaster();
+
         EscribirBarraEstado("OnConnectedToMaster - Conectado a Photon");
-        Debug.Log ("OnConnectedToMaster - Conectado a Photon");
+
         EscribirBarraEstado(PhotonNetwork.NickName + ", bienvenido al juego");
+
         ActivarPanel(panelBienvenida);
 
         txtBienvenida.text = PhotonNetwork.NickName;
-       
-        ActualizarPanelUnirseSala();
+
+        PhotonNetwork.JoinLobby();
     }
 
     public override void OnConnected()
     {
-        base.OnConnected();
+        //base.OnConnected();
 
         EscribirBarraEstado("OnConnected - Conectado a Photon");
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        base.OnDisconnected(cause);
+        //base.OnDisconnected(cause);
 
         EscribirBarraEstado("DESCONECTADO PHOTON: " + cause);
 
